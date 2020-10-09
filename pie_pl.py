@@ -5,7 +5,6 @@ Created on Thu Aug  6 10:29:13 2020
 @author: panglei
 """
 
-##gittest
 #test_again
 import pandas as pd
 import numpy as np
