@@ -21,7 +21,7 @@ from docxtpl import DocxTemplate, RichText, InlineImage
 from docx.shared import Mm
 import jinja2
 import itertools
-
+#12333443
 # %%设置工作路径
 output_text = []
 os.chdir(r'C:/工作/典型事件/tools_dev')
