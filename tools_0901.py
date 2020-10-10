@@ -985,8 +985,11 @@ num_consumer_loan = df_consumer_loan[df_consumer_loan.values>0.75]
 df_top3_acq = df_time[df_time['acq_nm'].isin([num_per_acq.index[0],num_per_acq.index[1],num_per_acq.index[2]])]
 top3_acq_card_num = df_top3_acq['acct_no_conv_sm3'].unique()/card_total
 #%%卡片余额查询比例
-
+def query_func(df):
+    return len(df[df['trans_id'].isin(['S00'])])/len(df)
+card_query_ratio = df_time.groupby(df_time['acct_no_conv_sm3']).apply(query_func)
 #%%ATM余额查询交易
+df_time['trans_id'].isin(['S00'])
 #%%应答码75、14/41占比异常
 #%%卡BIN集中性
 #%%资金入账交易占比
