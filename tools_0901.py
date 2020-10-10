@@ -982,7 +982,8 @@ def consumer_loan_func(df):
 df_consumer_loan = df_time[['trans_id','hp_settle_dt']].groupby(df_time['acct_no_conv_sm3']).apply(consumer_loan_func)
 num_consumer_loan = df_consumer_loan[df_consumer_loan.values>0.75]
 #%%头部收单机构的卡片占比
-
+df_top3_acq = df_time[df_time['acq_nm'].isin([num_per_acq.index[0],num_per_acq.index[1],num_per_acq.index[2]])]
+top3_acq_card_num = df_top3_acq['acct_no_conv_sm3'].unique()/card_total
 #%%卡片余额查询比例
 
 #%%ATM余额查询交易
