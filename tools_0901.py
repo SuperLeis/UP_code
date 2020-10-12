@@ -989,9 +989,11 @@ def query_func(df):
     return len(df[df['trans_id'].isin(['S00'])])/len(df)
 card_query_ratio = df_time.groupby(df_time['acct_no_conv_sm3']).apply(query_func)
 #%%ATM余额查询交易
-df_time['trans_id'].isin(['S00'])
+atm_query_ratio = len(df_time[df_time['trans_id'].isin(['S00'])&(df_trans['trans_chnl'].isin(atm))])/len(df)
 #%%应答码75、14/41占比异常
+resp_cd4_75_ratio = len(df_time[df_time['resp_cd4'].isin(['75','14','41'])])/len(df)
 #%%卡BIN集中性
+
 #%%资金入账交易占比
 #%%余额查询交易占比
 #%%发生在凌晨的取现消费类交易占比、笔均金额
