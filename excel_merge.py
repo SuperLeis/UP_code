@@ -37,6 +37,7 @@ def excel_merge_func(file_type='.xlsx', path=r'C:/工作/@合并文件文件夹/
 
 
 if __name__ == "__main__":
+    start = time.time()
     path_file = r'C:/工作/@合并文件文件夹/'
     os.chdir(path_file)  # 若想改变工作路径可以用chdir函数
     df_all = excel_merge_func(file_type='.csv', path=path_file)
@@ -44,3 +45,5 @@ if __name__ == "__main__":
     writer = pd.ExcelWriter(path_file+'合并文件.xlsx')
     df_all.to_excel(writer, index=False, encoding='utf-8')
     writer.save()
+    end = time.time()
+    print('已运行%f秒' % (end-start))
