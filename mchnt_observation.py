@@ -25,9 +25,9 @@ time_str_1 = (curr_time.date()-Day()).strftime("%Y%m%d")
 time_str_30 = (curr_time.date()-32*Day()).strftime("%Y%m%d")
 #改变路径
 #TODO
-df_old_mchnt_dir = r'商户交易累计/2020-06-03-10-18 商户交易.xlsx'
-df_new_mchnt_dir = r'商户交易每日/2020-10-20 商户交易.txt'
-df_mchnt_dir = r"C:/工作/典型事件/手机POS交易数据疑似套现/拉卡拉商户交易明细/商户交易累计/2020-06-03-10-20 商户交易.xlsx"
+df_old_mchnt_dir = r'商户交易累计/2020-06-03-10-20 商户交易.xlsx'
+df_new_mchnt_dir = r'商户交易每日/2020-10-22 商户交易.txt'
+df_mchnt_dir = r"C:/工作/典型事件/手机POS交易数据疑似套现/拉卡拉商户交易明细/商户交易累计/2020-06-03-10-22 商户交易.xlsx"
 document_dir = r'C:/工作/典型事件/手机POS交易数据疑似套现/拉卡拉商户交易明细/商户交易日监测报告/商户交易日监测报告'+time_str+'.docx'
 pic_dir = r'C:/工作/典型事件/手机POS交易数据疑似套现/拉卡拉商户交易明细/图片/'
 #设置画图字体
@@ -518,7 +518,7 @@ plt.savefig(pic_dir+"贷记卡5000元以上交易笔数随时间变化曲线.png
 df_uMP_curr_day = df_curr_day_2[df_curr_day_2['term_id'].str[:3]=='uMP']
 uMP_upload_ratio = len(df_uMP_curr_day)/len(df_curr_day_2)
 
-
+#%% 贷记卡交易占比随时间变化趋势：
 
 
 #%%输出结果
