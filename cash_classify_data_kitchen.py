@@ -23,14 +23,14 @@ import time
 curr_time_0 = datetime.now()-Day()
 time_str_2 = (curr_time_0.date()).strftime("%Y-%m-%d")
 
-df_old_card_dir = r'卡片交易累计/2020-06-03-10-14 卡片交易台账.csv'
-df_new_card_dir = r'卡片交易每周/2020-06-03-10-21 卡片交易/2020-10-21 卡片交易.txt'
-card_total_dir = r'卡片交易累计/2020-06-03-10-21 卡片交易台账.csv'
-mcc_dir = r'商户交易累计/2020-06-03-10-20 商户交易.xlsx'
-mchnt_dll = 20201020
-card_class_dir = r"C:/工作/典型事件/手机POS交易数据疑似套现/拉卡拉商户交易明细/卡片交易每周/2020-06-03-10-21 卡片交易/卡片分类1021.xlsx" 
-machnt_classfy_dir = r"C:/工作/典型事件/手机POS交易数据疑似套现/拉卡拉商户交易明细/卡片交易每周/2020-06-03-10-21 卡片交易/商户维度风险评估1021.xlsx"
-df_to_lakala_this_week_dir = r"C:/工作/典型事件/手机POS交易数据疑似套现/拉卡拉商户交易明细/卡片交易每周/2020-06-03-10-21 卡片交易/向拉卡拉报送商户1021.xlsx" 
+df_old_card_dir = r'卡片交易累计/2020-06-03-10-21 卡片交易台账.csv'
+df_new_card_dir = r'卡片交易每周/2020-06-03-10-281 卡片交易/2020-10-28 卡片交易.txt'
+card_total_dir = r'卡片交易累计/2020-06-03-10-281 卡片交易台账.csv'
+mcc_dir = r'商户交易累计/2020-06-03-11-01 商户交易.xlsx'
+mchnt_dll = 20201031
+card_class_dir = r"C:/工作/典型事件/手机POS交易数据疑似套现/拉卡拉商户交易明细/卡片交易每周/2020-06-03-10-281 卡片交易/卡片分类1028.xlsx" 
+machnt_classfy_dir = r"C:/工作/典型事件/手机POS交易数据疑似套现/拉卡拉商户交易明细/卡片交易每周/2020-06-03-10-281 卡片交易/商户维度风险评估1028.xlsx"
+df_to_lakala_this_week_dir = r"C:/工作/典型事件/手机POS交易数据疑似套现/拉卡拉商户交易明细/卡片交易每周/2020-06-03-10-281 卡片交易/向拉卡拉报送商户1028.xlsx" 
 
 #output_text.append("当前路径 -> %s" %os.getcwd())
 #print(output_text)
@@ -422,12 +422,13 @@ high_risk_machnt['商户套现风险分级'] = '高风险'
 mid_risk_machnt = machnt[machnt['交易笔数']>4]
 mid_risk_machnt = mid_risk_machnt[~mid_risk_machnt['mchnt_cd'].isin(high_risk_machnt['mchnt_cd'])]
 mid_risk_machnt = mid_risk_machnt[mid_risk_machnt['贷记卡金额占比']>0.8]
-mid_risk_machnt = mid_risk_machnt[mid_risk_machnt['笔均金额']>700]
+mid_risk_machnt = mid_risk_machnt[mid_risk_machnt['笔均金额']>1000]
 mid_risk_machnt_1 = mid_risk_machnt[mid_risk_machnt['中高风险金额占比']>0.3]
 
 mid_risk_machnt = machnt[machnt['交易笔数']>5]
 mid_risk_machnt = mid_risk_machnt[~mid_risk_machnt['mchnt_cd'].isin(high_risk_machnt['mchnt_cd'])]
 mid_risk_machnt = mid_risk_machnt[~mid_risk_machnt['mchnt_cd'].isin(mid_risk_machnt_1['mchnt_cd'])]
+mid_risk_machnt = mid_risk_machnt[mid_risk_machnt['笔均金额']>1000]
 mid_risk_machnt = mid_risk_machnt[mid_risk_machnt['贷记卡金额占比']>0.8]
 mid_risk_machnt_2 = mid_risk_machnt[mid_risk_machnt['高风险笔数']>1]
 
@@ -599,3 +600,7 @@ df_mcc_715 = df_mcc[df_mcc['hp_settle_dt']>datetime(2020, 7, 15, 0)]
 df_mid_high_low_715['trans_at'].sum()/df_mcc_715['trans_at'].sum()
 
 
+#%% 拟合曲线
+fit_test = (df_mid_high_low.groupby('hp_settle_dt')['trans_at'].agg('sum')/df_mcc.groupby('hp_settle_dt')['trans_at'].agg('sum')).rolling(10).mean(min_period=10)
+fit_test.plot()
+# %%
