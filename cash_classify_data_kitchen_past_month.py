@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-Created on Mon Jul  6 14:14:29 2020
+Created on Fri Nov  6 13:51:29 2020
 
 @author: panglei
 """
-
 
 import os
 import sys
@@ -19,23 +18,22 @@ from datetime import datetime
 from pandas.tseries.offsets import Day,MonthEnd
 import time
 
-###每次运行的checklist
+#%% 每次运行checklist
 curr_time_0 = datetime.now()-Day()
 time_str_2 = (curr_time_0.date()).strftime("%Y-%m-%d")
+mchnt_begin = 20201001
+mchnt_end = 20201102
 
-df_old_card_dir = r'卡片交易累计/2020-06-03-10-281 卡片交易台账.csv'
-df_new_card_dir = r'卡片交易每周/2020-06-03-11-04 卡片交易/2020-11-04 卡片交易.txt'
-card_total_dir = r'卡片交易累计/2020-06-03-11-04 卡片交易台账.csv'
-mcc_dir = r'商户交易累计/2020-06-03-11-03 商户交易.xlsx'
-mchnt_dll = 20201102
-card_class_dir = r"C:/工作/典型事件/手机POS交易数据疑似套现/拉卡拉商户交易明细/卡片交易每周/2020-06-03-11-04 卡片交易/卡片分类1104.xlsx" 
-machnt_classfy_dir = r"C:/工作/典型事件/手机POS交易数据疑似套现/拉卡拉商户交易明细/卡片交易每周/2020-06-03-11-04 卡片交易/商户维度风险评估1104.xlsx"
-df_to_lakala_this_week_dir = r"C:/工作/典型事件/手机POS交易数据疑似套现/拉卡拉商户交易明细/卡片交易每周/2020-06-03-11-04 卡片交易/向拉卡拉报送商户1104.xlsx" 
-
-#output_text.append("当前路径 -> %s" %os.getcwd())
-#print(output_text)
 os.chdir(r'C:/工作/典型事件/手机POS交易数据疑似套现/拉卡拉商户交易明细')
-#导入原始数据并设置列名
+df_old_card_dir = r'卡片交易累计/2020-06-03-10-281 卡片交易台账.csv'
+df_new_card_dir = r'卡片交易每周/2020-06-03-11-041 卡片交易/2020-11-04 卡片交易.txt'
+card_total_dir = r'卡片交易累计/2020-06-03-11-041 卡片交易台账.csv'
+mcc_dir = r'商户交易累计/2020-06-03-11-03 商户交易.xlsx'
+card_class_dir = r"卡片交易每周/2020-06-03-11-041 卡片交易/卡片分类1104t.xlsx" 
+machnt_classfy_dir = r"卡片交易每周/2020-06-03-11-041 卡片交易/商户维度风险评估1104t.xlsx"
+df_to_lakala_this_week_dir = r"卡片交易每周/2020-06-03-11-041 卡片交易/向拉卡拉报送商户1104t.xlsx" 
+
+#%% 导入原始数据并设置列名
 df_old_card = pd.read_csv(df_old_card_dir,
                  header=0, squeeze=True,dtype=object)
 df_new_card = pd.read_table(df_new_card_dir,delimiter=',',
@@ -61,13 +59,12 @@ df.to_csv(card_total_dir, index=False,encoding='utf-8')
 #%%##############################################################################
 df_mcc = pd.read_excel(mcc_dir,sheet_name = 'Sheet1',dtype=object,header=0)
 df_mcc['hp_settle_dt'] = pd.to_numeric(df_mcc['hp_settle_dt'], errors='coerce').fillna(0)
-'''
-设置商户交易截止时间T，要晚于卡片历史交易。
-'''
-df_mcc = df_mcc[df_mcc['hp_settle_dt']<=mchnt_dll]
+
+#设置商户交易截止时间T，要晚于卡片历史交易。
+df_mcc = df_mcc[df_mcc['hp_settle_dt']<=mchnt_end]
+df_mcc = df_mcc[df_mcc['hp_settle_dt']>=mchnt_begin]
 df_mcc['trans_at'] = pd.to_numeric(df_mcc['trans_at'], errors='coerce').fillna(0)
 resp_cd4_list = ['00','']
-#resp_cd4_list = ['00']
 df_success = df_mcc[df_mcc['resp_cd4'].isin(resp_cd4_list)]
 
 df['trans_at'] = (pd.to_numeric(df['trans_at'], errors='coerce').fillna(0))/100
@@ -265,11 +262,14 @@ single_card_mchnt = pd.DataFrame({'pri_acct_no_conv_sm3':single_card_mchnt.index
 single_card_trans_num = df_success.groupby('pri_acct_no_conv_sm3')['sys_tra_no'].agg('count')
 #单卡涉及交易金额
 single_card_trans_at = df_success.groupby('pri_acct_no_conv_sm3')['trans_at'].agg('sum')
+single_card_trans_at = pd.DataFrame({'pri_acct_no_conv_sm3':single_card_trans_at.index,'single_card_trans_at':single_card_trans_at.values})
 
-card_risk_up = single_card_mchnt[single_card_mchnt['single_card_mchnt']>3]
+card_risk_up_1 = single_card_mchnt[single_card_mchnt['single_card_mchnt']>3]
+card_risk_up_2 = single_card_trans_at[single_card_trans_at['single_card_trans_at']>100000]
 
-#'5'为单卡涉及商户数多的
-card_list['类别'][((card_list['类别']=='2_2')|(card_list['类别']=='3'))&(card_list['pri_acct_no_conv_sm3'].isin(card_risk_up['pri_acct_no_conv_sm3']))] = '5'
+#'5'为单卡涉及商户数多的,单卡涉及金额超过10万
+card_list['类别'][((card_list['类别']=='2_2')|(card_list['类别']=='3'))&(card_list['pri_acct_no_conv_sm3'].isin(card_risk_up_1['pri_acct_no_conv_sm3']))] = '5'
+card_list['类别'][((card_list['类别']=='2_2')|(card_list['类别']=='3'))&(card_list['pri_acct_no_conv_sm3'].isin(card_risk_up_2['pri_acct_no_conv_sm3']))] = '5'
 writer = pd.ExcelWriter(card_class_dir)
 card_list.to_excel(writer, index=False,encoding='utf-8',sheet_name='Sheet1')
 writer.save()
@@ -361,6 +361,14 @@ machnt = pd.merge(machnt,credit_card_num_permachnt,how='left',on = 'mchnt_cd')
 
 ###贷记卡卡均交易金额
 machnt['贷记卡卡均交易金额']=machnt['贷记卡金额']/machnt['贷记卡号数量']
+#%% 单张贷记卡交易金额占商户当日总交易金额中最大的占比
+grouped = df_success.groupby('mchnt_cd')
+def single_mchnt_max_loan(df):
+    single_card_trans_at = df.groupby('pri_acct_no_conv_sm3')['trans_at'].agg('sum')
+    return single_card_trans_at.sort_values(ascending=False)[0]
+single_credit_card_transat_permachnt = grouped.apply(single_mchnt_max_loan)
+single_credit_card_transat_permachnt = pd.DataFrame({'mchnt_cd':single_credit_card_transat_permachnt.index,'单张贷记卡交易金额占商户当日总交易金额中最大的占比':single_credit_card_transat_permachnt.values})
+machnt = pd.merge(machnt,single_credit_card_transat_permachnt,how='left',on = 'mchnt_cd')
 
 ###高风险
 df_high_risk = df_success[df_success['pri_acct_no_conv_sm3'].isin(high_card['pri_acct_no_conv_sm3'])]
@@ -397,7 +405,7 @@ machnt['低风险金额占比'] = machnt['低风险金额']/machnt['总金额']
 
 ################################################################################################################################
 #商户分级筛选
-#高风险
+#高风险商户
 machnt = machnt.fillna(0)
 machnt['中高风险金额占比'] = machnt['中风险金额占比'] + machnt['高风险金额占比']
 machnt['风险金额占比'] = machnt['中风险金额占比'] + machnt['高风险金额占比']+machnt['低风险金额占比']
@@ -415,7 +423,16 @@ high_risk_machnt = high_risk_machnt[high_risk_machnt['总金额']>10000]
 high_risk_machnt = high_risk_machnt[high_risk_machnt['笔均金额']>2000]
 high_risk_machnt_2 = high_risk_machnt[high_risk_machnt['高风险笔数']>2]
 
-high_risk_machnt = pd.concat([high_risk_machnt_1,high_risk_machnt_2], axis=0)
+high_risk_machnt = high_risk_machnt[~high_risk_machnt['mchnt_cd'].isin(high_risk_machnt_1['mchnt_cd'])]
+high_risk_machnt = high_risk_machnt[~high_risk_machnt['mchnt_cd'].isin(high_risk_machnt_2['mchnt_cd'])]
+high_risk_machnt = machnt[machnt['交易笔数']>10]
+high_risk_machnt = high_risk_machnt[high_risk_machnt['贷记卡金额占比']>0.95]
+high_risk_machnt = high_risk_machnt[high_risk_machnt['总金额']>25000]
+high_risk_machnt = high_risk_machnt[high_risk_machnt['笔均金额']>3000]
+high_risk_machnt = high_risk_machnt[high_risk_machnt['贷记卡卡均交易金额']>3000]
+high_risk_machnt_3 = high_risk_machnt[high_risk_machnt['单张贷记卡交易金额占商户当日总交易金额中最大的占比']>0.3]
+
+high_risk_machnt = pd.concat([high_risk_machnt_1,high_risk_machnt_2,high_risk_machnt_3], axis=0)
 high_risk_machnt['商户套现风险分级'] = '高风险'
 
 #中风险商户
