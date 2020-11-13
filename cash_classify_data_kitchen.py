@@ -23,14 +23,14 @@ import time
 curr_time_0 = datetime.now()-Day()
 time_str_2 = (curr_time_0.date()).strftime("%Y-%m-%d")
 
-df_old_card_dir = r'卡片交易累计/2020-06-03-10-281 卡片交易台账.csv'
-df_new_card_dir = r'卡片交易每周/2020-06-03-11-04 卡片交易/2020-11-04 卡片交易.txt'
-card_total_dir = r'卡片交易累计/2020-06-03-11-04 卡片交易台账.csv'
-mcc_dir = r'商户交易累计/2020-06-03-11-03 商户交易.xlsx'
-mchnt_dll = 20201102
-card_class_dir = r"C:/工作/典型事件/手机POS交易数据疑似套现/拉卡拉商户交易明细/卡片交易每周/2020-06-03-11-04 卡片交易/卡片分类1104.xlsx" 
-machnt_classfy_dir = r"C:/工作/典型事件/手机POS交易数据疑似套现/拉卡拉商户交易明细/卡片交易每周/2020-06-03-11-04 卡片交易/商户维度风险评估1104.xlsx"
-df_to_lakala_this_week_dir = r"C:/工作/典型事件/手机POS交易数据疑似套现/拉卡拉商户交易明细/卡片交易每周/2020-06-03-11-04 卡片交易/向拉卡拉报送商户1104.xlsx" 
+df_old_card_dir = r'卡片交易累计/2020-06-03-11-04 卡片交易台账.csv'
+df_new_card_dir = r'卡片交易每周/2020-06-03-11-11 卡片交易/2020-11-10 卡片交易.txt'
+card_total_dir = r'卡片交易累计/2020-06-03-11-11 卡片交易台账.csv'
+mcc_dir = r'商户交易累计/2020-06-03-11-10 商户交易.xlsx'
+mchnt_dll = 20201108
+card_class_dir = r"C:/工作/典型事件/手机POS交易数据疑似套现/拉卡拉商户交易明细/卡片交易每周/2020-06-03-11-11 卡片交易/卡片分类1111.xlsx" 
+machnt_classfy_dir = r"C:/工作/典型事件/手机POS交易数据疑似套现/拉卡拉商户交易明细/卡片交易每周/2020-06-03-11-11 卡片交易/商户维度风险评估1111.xlsx"
+df_to_lakala_this_week_dir = r"C:/工作/典型事件/手机POS交易数据疑似套现/拉卡拉商户交易明细/卡片交易每周/2020-06-03-11-11 卡片交易/向拉卡拉报送商户1111.xlsx" 
 
 #output_text.append("当前路径 -> %s" %os.getcwd())
 #print(output_text)
