@@ -25,13 +25,13 @@ time_str_2 = (curr_time_0.date()).strftime("%Y-%m-%d")
 #mchnt_end = 20201102
 
 os.chdir(r'C:/工作/典型事件/手机POS交易数据疑似套现/拉卡拉商户交易明细')
-df_old_card_dir = r'卡片交易累计/2020-06-03-10-281 卡片交易台账.csv'
-df_new_card_dir = r'卡片交易每周/2020-06-03-11-041 卡片交易/2020-11-04 卡片交易.txt'
-card_total_dir = r'卡片交易累计/2020-06-03-11-041 卡片交易台账.csv'
+df_old_card_dir = r'卡片交易累计/2020-06-03-11-04 卡片交易台账.csv'
+df_new_card_dir = r'卡片交易每周/2020-06-03-11-11 卡片交易/2020-11-10 卡片交易.txt'
+card_total_dir = r'卡片交易累计/2020-06-03-11-11 卡片交易台账.csv'
 mcc_dir = r'商户交易累计/2020-06-03-11-08 商户交易.xlsx'
-card_class_dir = r"卡片交易每周/2020-06-03-11-041 卡片交易/卡片分类1110t.xlsx" 
-machnt_classfy_dir = r"卡片交易每周/2020-06-03-11-041 卡片交易/商户维度风险评估11101656t.xlsx"
-df_to_lakala_this_week_dir = r"卡片交易每周/2020-06-03-11-041 卡片交易/向拉卡拉报送商户11101656t.xlsx" 
+card_class_dir = r"卡片交易每周/2020-06-03-11-041 卡片交易/卡片分类1112t.xlsx" 
+machnt_classfy_dir = r"卡片交易每周/2020-06-03-11-041 卡片交易/商户维度风险评估11121043t.xlsx"
+df_to_lakala_this_week_dir = r"卡片交易每周/2020-06-03-11-041 卡片交易/向拉卡拉报送商户11121943t.xlsx" 
 
 #%% 导入原始数据并设置列名
 df_old_card = pd.read_csv(df_old_card_dir,
@@ -242,8 +242,10 @@ card_list.columns = ['pri_acct_no_conv_sm3']
 card_list = pd.merge(card_list,result,how='left',on = 'pri_acct_no_conv_sm3')
 card_list = card_list.fillna('2_2')
 card_list['类别'][card_list['类别']==False] = '0'
+
+df_mcc_raw_oringe = pd.read_excel(mcc_dir,sheet_name = 'Sheet1',dtype=object,header=0)
 #%% 读取商户历史交易
-df_mcc_raw = pd.read_excel(mcc_dir,sheet_name = 'Sheet1',dtype=object,header=0)
+df_mcc_raw = df_mcc_raw_oringe.copy(deep=True)
 df_mcc_raw['hp_settle_dt'] = pd.to_numeric(df_mcc_raw['hp_settle_dt'], errors='coerce').fillna(0)
 #%% 测试按月统计套现率
 df_mhl_0 = pd.DataFrame(columns=['pri_acct_no_conv_sm3', 'card_attr', 'iss_ins_id_cd', 'acpt_ins_id_cd',
@@ -252,7 +254,7 @@ df_mhl_0 = pd.DataFrame(columns=['pri_acct_no_conv_sm3', 'card_attr', 'iss_ins_i
        'trans_id', 'pos_entry_md_cd', 'sys_tra_no', 'resp_cd4',
        'ext_hce_prod_nm', 'ext_hce_prod_in', 'ext_conn_in', 'record_dt'])
 for ele in range(5):
-    list_date = [20200601,20200701,20200801,20200901,20201008,20201108,20201201,20210101,20210201]
+    list_date = [20200601,20200701,20200801,20200901,20201010,20201110,20201201,20210101,20210201]
     print(str(list_date[ele]))
 #设置商户交易截止时间T，要晚于卡片历史交易。
     df_mcc = df_mcc_raw[df_mcc_raw['hp_settle_dt']<=list_date[ele+1]]
@@ -426,9 +428,9 @@ for ele in range(5):
     machnt['低风险笔数占比'] = machnt['低风险笔数']/machnt['交易笔数']
     machnt['低风险金额占比'] = machnt['低风险金额']/machnt['总金额']
 
-    ################################################################################################################################
-    #商户分级筛选
-    #高风险商户
+################################################################################################################################
+#商户分级筛选
+#高风险商户
     machnt = machnt.fillna(0)
     machnt['中高风险金额占比'] = machnt['中风险金额占比'] + machnt['高风险金额占比']
     machnt['风险金额占比'] = machnt['中风险金额占比'] + machnt['高风险金额占比']+machnt['低风险金额占比']
@@ -501,8 +503,9 @@ for ele in range(5):
     non_risk_machnt_1 = non_risk_machnt[non_risk_machnt['中风险金额']==0]
 
     low_risk_machnt_raw = low_risk_machnt[~low_risk_machnt['mchnt_cd'].isin(non_risk_machnt_1['mchnt_cd'])]
-    low_risk_machnt = low_risk_machnt_raw[low_risk_machnt_raw['总金额']>10000]
-    low_risk_machnt = low_risk_machnt[low_risk_machnt['交易笔数']>5]
+    low_risk_machnt = low_risk_machnt_raw[low_risk_machnt_raw['总金额']>8000]
+    low_risk_machnt = low_risk_machnt[low_risk_machnt['交易笔数']>3]
+    low_risk_machnt = low_risk_machnt[low_risk_machnt['笔均金额']>2000]
     low_risk_machnt = low_risk_machnt[low_risk_machnt['贷记卡金额占比']>0.85]
 
     non_risk_machnt_2 = low_risk_machnt_raw[~low_risk_machnt_raw['mchnt_cd'].isin(low_risk_machnt['mchnt_cd'])]
@@ -510,7 +513,6 @@ for ele in range(5):
     low_risk_machnt['商户套现风险分级'] = '低风险'
     non_risk_machnt = pd.concat([non_risk_machnt_1,non_risk_machnt_2], axis=0)
     non_risk_machnt['商户套现风险分级'] = '暂无风险'
-
     machnt_classfy = pd.concat([high_risk_machnt,mid_risk_machnt,low_risk_machnt,non_risk_machnt], axis=0)
     #更改列名
     machnt_classfy.rename(columns={'mchnt_cd':'商户代码','card_accptr_nm_addr':'商户名称','trans_at_average_day_last_week':'近一周日均交易金额'},inplace=True)
@@ -527,7 +529,9 @@ for ele in range(5):
     machnt_classfy.to_excel(writer, index=False,encoding='utf-8',sheet_name='Sheet1')
     writer.save()
 ################################################################################################################
-    df_this_month = machnt_classfy[(machnt_classfy['商户套现风险分级']!='暂无风险')]
+    #df_this_month = machnt_classfy[(machnt_classfy['商户套现风险分级']!='暂无风险')]
+    #df_this_month = machnt_classfy[(machnt_classfy['商户套现风险分级']=='高风险1')|(machnt_classfy['商户套现风险分级']=='高风险2')|(machnt_classfy['商户套现风险分级']=='高风险3')]
+    df_this_month = machnt_classfy[(machnt_classfy['商户套现风险分级']=='低风险')]
     df_this_month_mhl = df_mcc[df_mcc['mchnt_cd'].isin(df_this_month['商户代码'].to_list())]
     df_mhl_0 = pd.concat([df_mhl_0,df_this_month_mhl],axis=0)
     df_mhl_0.drop_duplicates(inplace=True)
@@ -672,11 +676,14 @@ df_mid_high_low_715['trans_at'].sum()/df_mcc_715['trans_at'].sum()
 
 #%% 累计套现率拟合曲线
 #df_mid_high_low_pile = df_mid_high_low.groupby('hp_settle_dt')['trans_at'].agg('sum')
+df_mhl_0 = df_mhl_0[df_mhl_0['card_attr'].isin(['02','03'])]
 df_mhl_0['hp_settle_dt'] = pd.to_datetime(df_mhl_0['hp_settle_dt'],format='%Y%m%d')
 df_mid_high_low_pile = df_mhl_0.groupby('hp_settle_dt')['trans_at'].agg('sum')
 df_mid_high_low_pile = pd.DataFrame({'hp_settle_dt':df_mid_high_low_pile.index,'trans_at':df_mid_high_low_pile.values})
 df_mid_high_low_pile.index = df_mid_high_low_pile['hp_settle_dt']
 df_mid_high_low_pile['cumsum'] = df_mid_high_low_pile['trans_at'].cumsum()
+
+df_mcc_raw = df_mcc_raw[df_mcc_raw['card_attr'].isin(['02','03'])]
 df_mcc_raw['hp_settle_dt'] = pd.to_datetime(df_mcc_raw['hp_settle_dt'],format='%Y%m%d')
 df_mcc_pile = df_mcc_raw.groupby('hp_settle_dt')['trans_at'].agg('sum')
 df_mcc_pile = pd.DataFrame({'hp_settle_dt':df_mcc_pile.index,'trans_at':df_mcc_pile.values})
@@ -708,4 +715,30 @@ plt.xlabel('时间',fontsize=11)#设置刻度标签
 plt.ylim(0,1)
 plt.ylabel('回溯'+str(cash_T)+'天'+'套现率',fontsize=11)
 plt.savefig('按月套现率随时间变化曲线.png',bbox_inches = 'tight')
+# %%贷记卡交易占比变化
+df_mcc_full = df_mcc_raw_oringe.copy(deep=True)
+df_mcc_full_loan = df_mcc_full[df_mcc_full['card_attr'].isin(['02','03'])]
+loan_ratio = (df_mcc_full_loan.groupby('hp_settle_dt')['trans_at'].agg('sum'))/(df_mcc_full.groupby('hp_settle_dt')['trans_at'].agg('sum'))
+loan_ratio.plot()
+# %%
+df_mcc_full_loan = df_mcc_full[df_mcc_full['card_attr'].isin(['02','03'])]
+df_mcc_full_loan['hp_settle_dt'] = pd.to_datetime(df_mcc_full_loan['hp_settle_dt'],format='%Y%m%d')
+df_mcc_full_loan_pile = df_mcc_full_loan.groupby('hp_settle_dt')['trans_at'].agg('sum')
+df_mcc_full_loan_pile = pd.DataFrame({'hp_settle_dt':df_mcc_full_loan_pile.index,'trans_at':df_mcc_full_loan_pile.values})
+df_mcc_full_loan_pile.index = df_mcc_full_loan_pile['hp_settle_dt']
+df_mcc_full_loan_pile['cumsum'] = df_mcc_full_loan_pile['trans_at'].cumsum()
+
+df_mcc_full['hp_settle_dt'] = pd.to_datetime(df_mcc_full['hp_settle_dt'],format='%Y%m%d')
+df_mcc_full_pile = df_mcc_full.groupby('hp_settle_dt')['trans_at'].agg('sum')
+df_mcc_full_pile = pd.DataFrame({'hp_settle_dt':df_mcc_full_pile.index,'trans_at':df_mcc_full_pile.values})
+df_mcc_full_pile.index = df_mcc_full_pile['hp_settle_dt']
+df_mcc_full_pile['cumsum'] = df_mcc_full_pile['trans_at'].cumsum()
+fit_test_pile = (df_mcc_full_loan_pile['cumsum']/df_mcc_full_pile['cumsum'])
+plt.figure(dpi=500)#设置分辨率
+splot = fit_test_pile.plot()
+plt.xticks(rotation=0)#设置刻度旋转角度
+plt.xlabel('时间',fontsize=11)#设置刻度标签
+plt.ylim(0.8,1)
+plt.ylabel('贷记卡占比',fontsize=11)
+plt.savefig('贷记卡占比随时间变化曲线.png',bbox_inches = 'tight')
 # %%
