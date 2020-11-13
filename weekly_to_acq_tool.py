@@ -85,7 +85,7 @@ df_fraud = pd.merge(df_fraud,df_tool_acq,how='left',on='acq_key')
 df_fraud = pd.merge(df_fraud,df_tool_fgs[['province_key','分公司']],how='left',on='province_key')
 df_fraud = pd.merge(df_fraud,df_tool_fgs[['province_key_1','分公司']],how='left',on='province_key_1')
 ###分公司还有宁波的情况要处理
-df_fraud = pd.merge(df_fraud,df_history[['商户代码','欺诈率BP','7-9月测算','发送风险预警时间']],how='left',on='商户代码')
+df_fraud = pd.merge(df_fraud,df_history[['商户代码','欺诈率BP','当月测算','发送风险预警时间']],how='left',on='商户代码')
 df_fraud['欺诈率较上次变化'] = df_fraud['ratio']-df_fraud['欺诈率BP']
 
 df_fraud = df_fraud.drop_duplicates()
