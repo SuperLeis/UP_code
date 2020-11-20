@@ -9,22 +9,24 @@ import pandas as pd
 import os
 import time
 
-df_raw_dir = r'C:/工作/每周发收单/20201109/bk_fxbdb.tbl_bkfxb_fraudrate_mchnt_y_dtl_01123902.txt'
+df_raw_dir = r'C:/工作/每周发收单/20201116/bk_fxbdb.tbl_bkfxb_fraudrate_mchnt_y_dtl_01123902.txt'
+df_raw_dir_excel = r'C:/工作/每周发收单/20201116/风险商户测算1115修正.xlsx'
 df_tool_dir = r'C:/工作/参数表&小工具/相关参数表.xlsx'
-df_history_dir = r'C:/工作/每周发收单/每周向收单发送欺诈高风险商户台账_截至20201108.xlsx'
+df_history_dir = r'C:/工作/每周发收单/台账/高风险商户测算台账_20201113.xlsx'
 df_fraud_rate_history_dir = r'C:/工作/每周发收单/风险商户台账-2020年9月.xlsx'
-result_dir = r'C:/工作/每周发收单/test.xlsx'
+result_dir = r'C:/工作/每周发收单/20201116/风险商户测算结果_20201116_2.xlsx'
 
 df_raw_colname = ['type', '商户代码', '商户名称', 'acq_ins_id_cd', 'fraud_at', 'fraud_cnt',
                   'fraud_card', 'trans_sum', 'trans_cnt', 'ratio', 'record_dt']
-df_raw = pd.read_table(df_raw_dir, delimiter=',',
-                       header=0, squeeze=True, dtype=object, names=df_raw_colname)
+#df_raw = pd.read_table(df_raw_dir, delimiter=',',
+#                       header=0, squeeze=True, dtype=object, names=df_raw_colname)
+df_raw = pd.read_excel(df_raw_dir_excel,sheet_name='Sheet1', dtype=object, header=0,names=df_raw_colname)
 df_tool_fgs = pd.read_excel(df_tool_dir,sheet_name = '地区分公司对应',header=0, squeeze=True,dtype=object)
 df_tool_acq = pd.read_excel(df_tool_dir,sheet_name = '机构列表',header=0, squeeze=True,dtype=object)
 df_history = pd.read_excel(df_history_dir,sheet_name = 'Sheet1',header=0, squeeze=True,dtype=object)
 
 df_raw[['fraud_at','trans_sum','fraud_cnt','ratio']] = df_raw[['fraud_at','trans_sum','fraud_cnt','ratio']].astype(float)
-df_raw = df_raw[df_raw['record_dt']=='20201108']
+df_raw = df_raw[df_raw['record_dt']=='20201115']
 #%%互联网
 df_internet = df_raw[df_raw['type']=='互联网']
 df_fraud_internet = df_internet[df_internet['fraud_at']>50000]
@@ -85,7 +87,7 @@ df_fraud = pd.merge(df_fraud,df_tool_acq,how='left',on='acq_key')
 df_fraud = pd.merge(df_fraud,df_tool_fgs[['province_key','分公司']],how='left',on='province_key')
 df_fraud = pd.merge(df_fraud,df_tool_fgs[['province_key_1','分公司']],how='left',on='province_key_1')
 ###分公司还有宁波的情况要处理
-df_fraud = pd.merge(df_fraud,df_history[['商户代码','欺诈率BP','当月测算','发送风险预警时间']],how='left',on='商户代码')
+df_fraud = pd.merge(df_fraud,df_history[['商户代码','欺诈率BP','当月测算等级','发送风险预警时间']],how='left',on='商户代码')
 df_fraud['欺诈率较上次变化'] = df_fraud['ratio']-df_fraud['欺诈率BP']
 
 df_fraud = df_fraud.drop_duplicates()
@@ -96,7 +98,7 @@ def cal_test(field1, field2):
     else:
         return field2
 df_fraud['分公司'] = df_fraud.apply(lambda m: cal_test(m['分公司_x'], m['分公司_y']), axis=1)
-
+df_fraud['分公司'] = df_fraud['分公司'].fillna('总行')
 #%% 匹配过去三个月六个月欺诈率
 df_fraud_rate_history = pd.read_excel(df_fraud_rate_history_dir,sheet_name ='线上风险商户',header=0, squeeze=True,dtype=object)
 df_fraud_rate_past3month = df_fraud_rate_history[df_fraud_rate_history['时间']=='2020M6-2020M8']
@@ -108,19 +110,21 @@ df_fraud = pd.merge(df_fraud,df_fraud_rate_past6month[['商户代码','欺诈比
 
 df_fraud = df_fraud[['type','商户代码', '商户名称', 'acq_ins_id_cd', 'fraud_at', 'fraud_cnt',
        'fraud_card', 'trans_sum', 'trans_cnt', 'ratio', 'record_dt','fraud_level', 
-       '机构名称', '欺诈率BP', '7-9月测算', '发送风险预警时间', '欺诈率较上次变化', '分公司',
+       '机构名称', '欺诈率BP', '当月测算等级', '发送风险预警时间', '欺诈率较上次变化', '分公司',
        '欺诈比率_x', '级别_x', '欺诈比率_y', '级别_y']]
 
 df_fraud.columns = ['类型','商户代码', '商户名称', '收单机构代码', '欺诈金额', '欺诈笔数',
-       '欺诈卡数', '交易金额', '交易笔数', '欺诈率', 'record_dt','风险级别', 
+       '欺诈卡数', '交易金额', '交易笔数', '欺诈率', '测算时间','风险级别', 
        '机构名称', '上次发送欺诈率', '上次发送欺诈等级', '发送风险预警时间', '欺诈率较上次变化', '分公司',
        '欺诈率3个月', '级别3个月', '欺诈比率6个月', '级别6个月']       
 
 df_fraud['上次发送欺诈等级'].replace(['I', 'II','III','-'], [1,2,3,0], inplace=True)
 df_fraud['上次发送欺诈等级'].fillna(0)
 df_fraud['欺诈等级是否变化'] = df_fraud['风险级别']-df_fraud['上次发送欺诈等级']
-df_fraud['上次发送欺诈等级'].replace([0,1,2,3,-1,-2,-3], ['不变','上升','上升','上升','下降','下降','下降'], inplace=True)
-df_fraud['上次发送欺诈等级'].fillna('-')
+df_fraud['欺诈等级是否变化'].replace([0,1,2,3,-1,-2,-3], ['不变','上升','上升','上升','下降','下降','下降'], inplace=True)
+df_fraud['欺诈等级是否变化'].fillna('-')
+
+df_fraud['发送风险预警时间'] = df_fraud['发送风险预警时间'].astype(str)
 
 writer = pd.ExcelWriter(result_dir)
 df_fraud.to_excel(writer, index=False, encoding='utf-8')
