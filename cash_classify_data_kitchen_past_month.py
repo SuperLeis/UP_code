@@ -444,7 +444,7 @@ for ele in range(5):
     #high_risk_machnt = high_risk_machnt[high_risk_machnt['单张贷记卡交易金额占商户当日总交易金额中最大的占比']>0.2]
     high_risk_machnt_1 = high_risk_machnt[high_risk_machnt['中高风险金额占比']>0.6]
     high_risk_machnt_1['商户套现风险分级'] = '高风险1'
-
+    
     high_risk_machnt = machnt[machnt['交易笔数']>6]
     high_risk_machnt = high_risk_machnt[~high_risk_machnt['mchnt_cd'].isin(high_risk_machnt_1['mchnt_cd'])]
     high_risk_machnt = high_risk_machnt[high_risk_machnt['贷记卡金额占比']>0.85]

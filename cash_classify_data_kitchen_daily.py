@@ -26,10 +26,10 @@ time_mark = (datetime.now()).strftime("%Y-%m-%d-%H-%M-%S")
 #mchnt_end = 20201102
 
 os.chdir(r'C:/工作/典型事件/手机POS交易数据疑似套现/拉卡拉商户交易明细')
-df_old_card_dir = r'卡片交易累计/2020-06-03-11-04 卡片交易台账.csv'
-df_new_card_dir = r'卡片交易每周/2020-06-03-11-11 卡片交易/2020-11-10 卡片交易.txt'
-card_total_dir = r'卡片交易累计/2020-06-03-11-11 卡片交易台账.csv'
-mcc_dir = r'商户交易累计/2020-06-03-11-11 商户交易.xlsx'
+df_old_card_dir = r'卡片交易累计/2020-06-03-11-11 卡片交易台账.csv'
+df_new_card_dir = r'卡片交易每周/2020-06-03-11-18 卡片交易/2020-11-18 卡片交易.txt'
+card_total_dir = r'卡片交易累计/2020-06-03-11-18 卡片交易台账.csv'
+mcc_dir = r'商户交易累计/2020-06-03-11-17 商户交易.xlsx'
 card_class_dir = r"C:/工作/典型事件/手机POS交易数据疑似套现/拉卡拉商户交易明细/卡片交易每周/2020-06-03-11-11t 卡片交易/卡片分类"+time_mark+".xlsx" 
 machnt_classfy_dir = r"C:/工作/典型事件/手机POS交易数据疑似套现/拉卡拉商户交易明细/卡片交易每周/2020-06-03-11-11t 卡片交易/商户维度风险评估"+time_mark+".xlsx"
 machnt_classfy_0_dir = r"C:/工作/典型事件/手机POS交易数据疑似套现/拉卡拉商户交易明细/卡片交易每周/2020-06-03-11-11t 卡片交易/商户维度风险评估每天"+time_mark+".xlsx"
@@ -397,7 +397,7 @@ for ele in date_index['hp_settle_dt'][-11:]:
         count = 0
         for element in arr:
             total = total + 1
-            if element>=4500:
+            if element>=4800:
                 count = count + 1
         if count==0:
             return 0
@@ -406,12 +406,31 @@ for ele in date_index['hp_settle_dt'][-11:]:
     trans_at_bigthan_4800 = grouped['trans_at'].agg(bigthan_4800)
     trans_at_bigthan_4800 = pd.DataFrame({'mchnt_cd':trans_at_bigthan_4800.index,'大于4800笔数占比':trans_at_bigthan_4800.values})  
     machnt = pd.merge(machnt,trans_at_bigthan_4800,how='left',on = 'mchnt_cd')
+    #%% 交易金额大于4800元的金额占比
+    grouped = df_success.groupby('mchnt_cd')
+    def bigthan_4800_at(arr):
+        total = 0
+        count = 0
+        for element in arr:
+            total = total + element
+            if element>=4800:
+                count = count + element
+        if count==0:
+            return 0
+        else:
+            return count/total
+    trans_at_bigthan_4800_at = grouped['trans_at'].agg(bigthan_4800_at)
+    trans_at_bigthan_4800_at = pd.DataFrame({'mchnt_cd':trans_at_bigthan_4800_at.index,'大于4800金额占比':trans_at_bigthan_4800_at.values})  
+    machnt = pd.merge(machnt,trans_at_bigthan_4800_at,how='left',on = 'mchnt_cd')
+    
     ###高风险
     df_high_risk = df_success[df_success['pri_acct_no_conv_sm3'].isin(high_card['pri_acct_no_conv_sm3'])]
     trans_at_high_risk = df_high_risk.groupby('mchnt_cd')['trans_at'].agg('sum')
     trans_num_high_risk = df_high_risk.groupby('mchnt_cd')['sys_tra_no'].agg('count')
+    card_num_high_risk = df_high_risk.groupby('mchnt_cd')['pri_acct_no_conv_sm3'].agg(uniq)
     high_risk = pd.merge(trans_at_high_risk,trans_num_high_risk,how='left',on = 'mchnt_cd')
-    high_risk.columns = ['高风险金额','高风险笔数']
+    high_risk = pd.merge(high_risk,card_num_high_risk,how='left',on = 'mchnt_cd')
+    high_risk.columns = ['高风险金额','高风险笔数','高风险卡数']
 
     ###中风险
     df_mid_risk = df_success[df_success['pri_acct_no_conv_sm3'].isin(mid_card['pri_acct_no_conv_sm3'])]
@@ -438,41 +457,49 @@ for ele in date_index['hp_settle_dt'][-11:]:
     machnt['中风险金额占比'] = machnt['中风险金额']/machnt['总金额']
     machnt['低风险笔数占比'] = machnt['低风险笔数']/machnt['交易笔数']
     machnt['低风险金额占比'] = machnt['低风险金额']/machnt['总金额']
-
+    machnt['中高风险金额占比'] = machnt['中风险金额占比'] + machnt['高风险金额占比']
+    machnt['风险金额占比'] = machnt['中风险金额占比'] + machnt['高风险金额占比']+machnt['低风险金额占比']
+    
+    machnt = machnt.drop_duplicates(['mchnt_cd'])
 ################################################################################################################################
 #商户分级筛选
 #高风险商户
     machnt = machnt.fillna(0)
-    machnt['中高风险金额占比'] = machnt['中风险金额占比'] + machnt['高风险金额占比']
-    machnt['风险金额占比'] = machnt['中风险金额占比'] + machnt['高风险金额占比']+machnt['低风险金额占比']
 
-    high_risk_machnt = machnt[machnt['交易笔数']>8]
-    high_risk_machnt = high_risk_machnt[high_risk_machnt['贷记卡金额占比']>0.85]
-    high_risk_machnt = high_risk_machnt[high_risk_machnt['总金额']>15000]
-    high_risk_machnt = high_risk_machnt[high_risk_machnt['笔均金额']>3000]
-    high_risk_machnt = high_risk_machnt[high_risk_machnt['大于4800笔数占比']>0.6]
-    high_risk_machnt = high_risk_machnt[high_risk_machnt['贷记卡卡均交易金额']>8000]
-    #high_risk_machnt = high_risk_machnt[high_risk_machnt['单张贷记卡交易金额占商户当日总交易金额中最大的占比']>0.2]
-    high_risk_machnt_1 = high_risk_machnt[high_risk_machnt['中高风险金额占比']>0.6]
+    high_risk_machnt = machnt[machnt['交易笔数']>5]
+    high_risk_machnt = high_risk_machnt[high_risk_machnt['总金额']>=15000]
+    high_risk_machnt = high_risk_machnt[high_risk_machnt['笔均金额']>=3000]
+    high_risk_machnt = high_risk_machnt[high_risk_machnt['贷记卡金额占比']>=0.85]
+    high_risk_machnt = high_risk_machnt[high_risk_machnt['贷记卡卡均交易金额']>=8000]
+    high_risk_machnt = high_risk_machnt[high_risk_machnt['大于4800笔数占比']>=0]
+    high_risk_machnt = high_risk_machnt[high_risk_machnt['大于4800金额占比']>=0]
+    high_risk_machnt = high_risk_machnt[high_risk_machnt['中高风险金额占比']>=0.3]
+    high_risk_machnt = high_risk_machnt[high_risk_machnt['高风险笔数']>=-1]
+    high_risk_machnt_1 = high_risk_machnt[high_risk_machnt['高风险卡数']>=-1]
     high_risk_machnt_1['商户套现风险分级'] = '高风险1'
 
     high_risk_machnt = machnt[machnt['交易笔数']>5]
     high_risk_machnt = high_risk_machnt[~high_risk_machnt['mchnt_cd'].isin(high_risk_machnt_1['mchnt_cd'])]
-    high_risk_machnt = high_risk_machnt[high_risk_machnt['贷记卡金额占比']>0.85]
-    high_risk_machnt = high_risk_machnt[high_risk_machnt['总金额']>12000]
-    high_risk_machnt = high_risk_machnt[high_risk_machnt['笔均金额']>3000]
-    high_risk_machnt_2 = high_risk_machnt[high_risk_machnt['高风险笔数']>2]
+    high_risk_machnt = high_risk_machnt[high_risk_machnt['总金额']>=15000]
+    high_risk_machnt = high_risk_machnt[high_risk_machnt['笔均金额']>=3000]
+    high_risk_machnt = high_risk_machnt[high_risk_machnt['贷记卡金额占比']>=0.85]
+    high_risk_machnt = high_risk_machnt[high_risk_machnt['贷记卡卡均交易金额']>=0]
+    high_risk_machnt = high_risk_machnt[high_risk_machnt['大于4800笔数占比']>=0]
+    high_risk_machnt = high_risk_machnt[high_risk_machnt['大于4800金额占比']>=0]
+    high_risk_machnt = high_risk_machnt[high_risk_machnt['中高风险金额占比']>=0]
+    high_risk_machnt = high_risk_machnt[high_risk_machnt['高风险笔数']>=2]
+    high_risk_machnt_2 = high_risk_machnt[high_risk_machnt['高风险卡数']>=-1]
     high_risk_machnt_2['商户套现风险分级'] = '高风险2'
 
+    high_risk_machnt = machnt[machnt['交易笔数']>5]
     high_risk_machnt = high_risk_machnt[~high_risk_machnt['mchnt_cd'].isin(high_risk_machnt_1['mchnt_cd'])]
     high_risk_machnt = high_risk_machnt[~high_risk_machnt['mchnt_cd'].isin(high_risk_machnt_2['mchnt_cd'])]
-    high_risk_machnt = machnt[machnt['交易笔数']>5]
-    high_risk_machnt = high_risk_machnt[high_risk_machnt['贷记卡金额占比']>0.85]
-    high_risk_machnt = high_risk_machnt[high_risk_machnt['总金额']>14000]
-    high_risk_machnt = high_risk_machnt[high_risk_machnt['笔均金额']>3000]
-    high_risk_machnt = high_risk_machnt[high_risk_machnt['大于4800笔数占比']>0.6]
-    high_risk_machnt_3 = high_risk_machnt[high_risk_machnt['贷记卡卡均交易金额']>8000]
-    #high_risk_machnt_3 = high_risk_machnt[high_risk_machnt['单张贷记卡交易金额占商户当日总交易金额中最大的占比']>0.2]
+    high_risk_machnt = high_risk_machnt[high_risk_machnt['总金额']>=15000]
+    high_risk_machnt = high_risk_machnt[high_risk_machnt['笔均金额']>=3500]
+    high_risk_machnt = high_risk_machnt[high_risk_machnt['贷记卡金额占比']>=0.85]
+    high_risk_machnt = high_risk_machnt[high_risk_machnt['贷记卡卡均交易金额']>=8000]
+    high_risk_machnt = high_risk_machnt[high_risk_machnt['大于4800笔数占比']>=0.6]
+    high_risk_machnt_3 = high_risk_machnt[high_risk_machnt['大于4800金额占比']>=0.8]
     high_risk_machnt_3['商户套现风险分级'] = '高风险3'
 
     high_risk_machnt = pd.concat([high_risk_machnt_1,high_risk_machnt_2,high_risk_machnt_3], axis=0)
@@ -491,16 +518,18 @@ for ele in date_index['hp_settle_dt'][-11:]:
     mid_risk_machnt = mid_risk_machnt[~mid_risk_machnt['mchnt_cd'].isin(mid_risk_machnt_1['mchnt_cd'])]
     mid_risk_machnt = mid_risk_machnt[mid_risk_machnt['笔均金额']>2500]
     mid_risk_machnt = mid_risk_machnt[mid_risk_machnt['贷记卡金额占比']>0.85]
-    mid_risk_machnt_2 = mid_risk_machnt[mid_risk_machnt['高风险笔数']>1]
+    mid_risk_machnt_2 = mid_risk_machnt[mid_risk_machnt['高风险笔数']>=1]
     mid_risk_machnt_2['商户套现风险分级'] = '中风险2'
 
-    mid_risk_machnt = machnt[machnt['交易笔数']>4]
+    mid_risk_machnt = machnt[machnt['交易笔数']>3]
     mid_risk_machnt = mid_risk_machnt[~mid_risk_machnt['mchnt_cd'].isin(high_risk_machnt['mchnt_cd'])]
     mid_risk_machnt = mid_risk_machnt[~mid_risk_machnt['mchnt_cd'].isin(mid_risk_machnt_1['mchnt_cd'])]
     mid_risk_machnt = mid_risk_machnt[~mid_risk_machnt['mchnt_cd'].isin(mid_risk_machnt_2['mchnt_cd'])]
     mid_risk_machnt = mid_risk_machnt[mid_risk_machnt['笔均金额']>2500]
     mid_risk_machnt = mid_risk_machnt[mid_risk_machnt['贷记卡金额占比']>0.85]
-    mid_risk_machnt = mid_risk_machnt[mid_risk_machnt['总金额']>6000]
+    mid_risk_machnt = mid_risk_machnt[mid_risk_machnt['总金额']>7000]
+    mid_risk_machnt = mid_risk_machnt[mid_risk_machnt['大于4800笔数占比']>=0.4]
+    mid_risk_machnt = mid_risk_machnt[mid_risk_machnt['大于4800金额占比']>=0]
     mid_risk_machnt_3 = mid_risk_machnt[mid_risk_machnt['贷记卡卡均交易金额']>5000]
     mid_risk_machnt_3['商户套现风险分级'] = '中风险3'
     mid_risk_machnt = pd.concat([mid_risk_machnt_1,mid_risk_machnt_2,mid_risk_machnt_3], axis=0)
@@ -515,9 +544,9 @@ for ele in date_index['hp_settle_dt'][-11:]:
     non_risk_machnt_1 = non_risk_machnt[non_risk_machnt['中风险金额']==0]
 
     low_risk_machnt_raw = low_risk_machnt[~low_risk_machnt['mchnt_cd'].isin(non_risk_machnt_1['mchnt_cd'])]
-    low_risk_machnt = low_risk_machnt_raw[low_risk_machnt_raw['总金额']>6000]
-    low_risk_machnt = low_risk_machnt[low_risk_machnt['交易笔数']>4]
-    mid_risk_machnt_3 = mid_risk_machnt[mid_risk_machnt['贷记卡卡均交易金额']>2500]
+    low_risk_machnt = low_risk_machnt_raw[low_risk_machnt_raw['总金额']>6500]
+    low_risk_machnt = low_risk_machnt[low_risk_machnt['交易笔数']>3]
+    mid_risk_machnt_3 = mid_risk_machnt[mid_risk_machnt['贷记卡卡均交易金额']>3000]
     low_risk_machnt = low_risk_machnt[low_risk_machnt['贷记卡金额占比']>0.85]
 
     non_risk_machnt_2 = low_risk_machnt_raw[~low_risk_machnt_raw['mchnt_cd'].isin(low_risk_machnt['mchnt_cd'])]

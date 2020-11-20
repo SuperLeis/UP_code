@@ -19,23 +19,21 @@ from datetime import datetime
 from pandas.tseries.offsets import Day,MonthEnd
 import time
 
-###每次运行的checklist
+#%% 统一文件内部时间
 curr_time_0 = datetime.now()-Day()
 time_str_2 = (curr_time_0.date()).strftime("%Y-%m-%d")
+#%% 每次运行的checklist
+df_old_card_dir = r'卡片交易累计/2020-06-03-11-11 卡片交易台账.csv'
+df_new_card_dir = r'卡片交易每周/2020-06-03-11-18 卡片交易/2020-11-18 卡片交易.txt'
+card_total_dir = r'卡片交易累计/2020-06-03-11-18 卡片交易台账.csv'
+mcc_dir = r'商户交易累计/2020-06-03-11-17 商户交易.xlsx'
+mchnt_dll = 20201117
+card_class_dir = r"C:/工作/典型事件/手机POS交易数据疑似套现/拉卡拉商户交易明细/卡片交易每周/2020-06-03-11-18 卡片交易/卡片分类1118.xlsx" 
+machnt_classfy_dir = r"C:/工作/典型事件/手机POS交易数据疑似套现/拉卡拉商户交易明细/卡片交易每周/2020-06-03-11-18 卡片交易/商户维度风险评估1118.xlsx"
+df_to_lakala_this_week_dir = r"C:/工作/典型事件/手机POS交易数据疑似套现/拉卡拉商户交易明细/卡片交易每周/2020-06-03-11-18 卡片交易/向拉卡拉报送商户1118.xlsx" 
 
-df_old_card_dir = r'卡片交易累计/2020-06-03-11-04 卡片交易台账.csv'
-df_new_card_dir = r'卡片交易每周/2020-06-03-11-11 卡片交易/2020-11-10 卡片交易.txt'
-card_total_dir = r'卡片交易累计/2020-06-03-11-11 卡片交易台账.csv'
-mcc_dir = r'商户交易累计/2020-06-03-11-10 商户交易.xlsx'
-mchnt_dll = 20201108
-card_class_dir = r"C:/工作/典型事件/手机POS交易数据疑似套现/拉卡拉商户交易明细/卡片交易每周/2020-06-03-11-11 卡片交易/卡片分类1111.xlsx" 
-machnt_classfy_dir = r"C:/工作/典型事件/手机POS交易数据疑似套现/拉卡拉商户交易明细/卡片交易每周/2020-06-03-11-11 卡片交易/商户维度风险评估1111.xlsx"
-df_to_lakala_this_week_dir = r"C:/工作/典型事件/手机POS交易数据疑似套现/拉卡拉商户交易明细/卡片交易每周/2020-06-03-11-11 卡片交易/向拉卡拉报送商户1111.xlsx" 
-
-#output_text.append("当前路径 -> %s" %os.getcwd())
-#print(output_text)
 os.chdir(r'C:/工作/典型事件/手机POS交易数据疑似套现/拉卡拉商户交易明细')
-#导入原始数据并设置列名
+#%% 导入原始数据并设置列名
 df_old_card = pd.read_csv(df_old_card_dir,
                  header=0, squeeze=True,dtype=object)
 df_new_card = pd.read_table(df_new_card_dir,delimiter=',',
@@ -51,23 +49,17 @@ df.columns = ['pri_acct_no_conv_sm3', 'card_attr', 'iss_ins_id_cd', 'acpt_ins_id
                 'fwd_ins_id_cd', 'loc_trans_tm', 'hp_settle_dt', 'mchnt_cd',
                 'card_accptr_nm_addr', 'trans_at', 'mchnt_tp', 'term_id', 'trans_chnl',
                 'trans_id', 'pos_entry_md_cd', 'sys_tra_no', 'resp_cd4']
+
 df = df.drop_duplicates()
-'''
-writer = pd.ExcelWriter(card_total_dir)
-df.to_excel(writer, index=False,encoding='utf-8',sheet_name='Sheet1')
-writer.save()
-'''
 df.to_csv(card_total_dir, index=False,encoding='utf-8')
 #%%##############################################################################
 df_mcc = pd.read_excel(mcc_dir,sheet_name = 'Sheet1',dtype=object,header=0)
 df_mcc['hp_settle_dt'] = pd.to_numeric(df_mcc['hp_settle_dt'], errors='coerce').fillna(0)
-'''
-设置商户交易截止时间T，要晚于卡片历史交易。
-'''
+
+#设置商户交易截止时间T，要晚于卡片历史交易。
 df_mcc = df_mcc[df_mcc['hp_settle_dt']<=mchnt_dll]
 df_mcc['trans_at'] = pd.to_numeric(df_mcc['trans_at'], errors='coerce').fillna(0)
 resp_cd4_list = ['00','']
-#resp_cd4_list = ['00']
 df_success = df_mcc[df_mcc['resp_cd4'].isin(resp_cd4_list)]
 
 df['trans_at'] = (pd.to_numeric(df['trans_at'], errors='coerce').fillna(0))/100
